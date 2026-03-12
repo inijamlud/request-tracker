@@ -17,11 +17,30 @@ model Request {
   title       String
   description String?
   status      Status   @default(PENDING)
+  priority    Priority        @default(MEDIUM)
+  dueDate     DateTime?
   createdAt   DateTime @default(now())
+  updatedAt   DateTime        @updatedAt
+  history     StatusHistory[] 
+}
+
+model StatusHistory {
+  id        String   @id @default(uuid())
+  status    Status
+  createdAt DateTime @default(now())
+  requestId String
+  request   Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
 }
 
 enum Status {
   PENDING
   SUBMITTED
   DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
 }

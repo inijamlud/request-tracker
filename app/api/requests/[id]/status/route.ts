@@ -13,10 +13,18 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
 
-  const updated = await prisma.request.update({
-    where: { id },
-    data: { status: status as Status },
-  });
+  const updated = await prisma.$transaction([
+    prisma.request.update({
+      where: { id },
+      data: { status: status as Status },
+    }),
+    prisma.statusHistory.create({
+      data: {
+        requestId: id,
+        status: status as Status,
+      },
+    }),
+  ]);
 
-  return NextResponse.json(updated);
+  return NextResponse.json(updated[0]);
 }

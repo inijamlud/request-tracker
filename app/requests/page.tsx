@@ -1,4 +1,5 @@
 import StatusBadge from "@/components/BadgeStatus";
+import PriorityBadge from "@/components/PriorityBadge";
 import { Status } from "@/lib/generated/prisma/enums";
 import prisma from "@/lib/prisma";
 import Link from "next/link";
@@ -99,7 +100,23 @@ export default async function RequestPage({ searchParams }: Props) {
                 </p>
               </div>
 
+              <PriorityBadge priority={req.priority} />
               <StatusBadge status={req.status} />
+              {req.dueDate && (
+                <span
+                  className={`text-xs font-medium ${
+                    new Date(req.dueDate) < new Date() && req.status !== "DONE"
+                      ? "text-danger" // overdue
+                      : "text-primary/40"
+                  }`}
+                >
+                  Due{" "}
+                  {new Date(req.dueDate).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                  })}
+                </span>
+              )}
             </li>
           ))}
         </ul>

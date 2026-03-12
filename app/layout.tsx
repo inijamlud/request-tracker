@@ -1,3 +1,4 @@
+import Navbar from "@/components/NavBar";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -14,19 +15,19 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Request Tracker",
-  description: "request tracker and timeline adjustment app",
+  description: "Request tracker and timeline adjustment app",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} bg-background text-primary antialiased`}
       >
+        <Navbar />
+
         {children}
       </body>
     </html>
