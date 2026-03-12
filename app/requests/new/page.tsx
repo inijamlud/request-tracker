@@ -2,6 +2,7 @@
 
 import TagSelector from "@/components/TagSelector";
 import { PRIORITY_COLORS, PRIORITY_ORDER } from "@/constants/priority";
+import { useRequestForm } from "@/hooks/useRequestForm";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -10,84 +11,84 @@ type Tag = { id: string; name: string; color: string };
 
 export default function NewRequestPage() {
   const router = useRouter();
+  const { values, errors, loading, setLoading, setValue, validate } =
+    useRequestForm();
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState("MEDIUM");
-  const [dueDate, setDueDate] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [tags, setTags] = useState<Tag[]>([]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    if (!title.trim() || !description.trim()) {
-      setError("Title and description are required.");
-      return;
-    }
+    if (!validate()) return;
 
     setLoading(true);
-    setError("");
 
-    await fetch("/api/requests", {
+    const res = await fetch("/api/requests", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        title,
-        description,
-        priority,
-        dueDate: dueDate || null,
-        tags: tags.map((t) => t.id),
+        ...values,
+        tagIds: tags.map((t) => t.id),
       }),
     });
+
+    if (!res.ok) {
+      setLoading(false);
+      return;
+    }
 
     router.push("/requests");
   }
 
   return (
-    <div className="min-h-screen bg-[#F0F4EF] p-10">
+    <div className="min-h-screen bg-background p-10">
       <div className="max-w-xl mx-auto space-y-6">
-        {/* Back */}
         <Link
           href="/requests"
-          className="text-sm text-[#00272B]/50 hover:text-[#00272B] transition"
+          className="text-sm text-primary/40 hover:text-primary transition"
         >
           ← Back to Requests
         </Link>
 
-        {/* Card */}
-        <div className="bg-white border border-[#BFCC94]/40 rounded-2xl p-6 space-y-5 mt-5">
-          <h1 className="text-2xl font-bold text-[#00272B]">New Request</h1>
-
-          <hr className="border-[#BFCC94]/30" />
+        <div className="bg-surface border border-accent/40 rounded-2xl p-6 space-y-5">
+          <h1 className="text-2xl font-bold text-primary">New Request</h1>
+          <hr className="border-accent/20" />
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Title */}
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-[#00272B]">
-                Title
+              <label className="text-xs font-semibold text-primary/50 uppercase tracking-wider">
+                Title <span className="text-danger">*</span>
               </label>
               <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={values.title ?? ""}
+                onChange={(e) => setValue("title", e.target.value)}
                 placeholder="e.g. Fix login bug"
-                className="w-full border border-[#BFCC94]/60 bg-[#F0F4EF] rounded-lg px-4 py-2.5 text-sm text-[#00272B] placeholder-[#00272B]/30 focus:outline-none focus:ring-2 focus:ring-[#BFCC94]"
+                className={`w-full border bg-background rounded-lg px-4 py-2.5 text-sm text-primary placeholder-primary/30 focus:outline-none focus:ring-2 focus:ring-accent/50 transition ${
+                  errors.title ? "border-danger" : "border-accent/40"
+                }`}
               />
+              {errors.title && (
+                <p className="text-xs text-danger">{errors.title}</p>
+              )}
             </div>
 
             {/* Description */}
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-[#00272B]">
-                Description
+              <label className="text-xs font-semibold text-primary/50 uppercase tracking-wider">
+                Description <span className="text-danger">*</span>
               </label>
               <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={values.description ?? ""}
+                onChange={(e) => setValue("description", e.target.value)}
                 placeholder="Describe the request in detail..."
                 rows={4}
-                className="w-full border border-[#BFCC94]/60 bg-[#F0F4EF] rounded-lg px-4 py-2.5 text-sm text-[#00272B] placeholder-[#00272B]/30 focus:outline-none focus:ring-2 focus:ring-[#BFCC94] resize-none"
+                className={`w-full border bg-background rounded-lg px-4 py-2.5 text-sm text-primary placeholder-primary/30 focus:outline-none focus:ring-2 focus:ring-accent/50 transition resize-none ${
+                  errors.description ? "border-danger" : "border-accent/40"
+                }`}
               />
+              {errors.description && (
+                <p className="text-xs text-danger">{errors.description}</p>
+              )}
             </div>
 
             {/* Priority */}
@@ -100,9 +101,9 @@ export default function NewRequestPage() {
                   <button
                     key={p}
                     type="button"
-                    onClick={() => setPriority(p)}
+                    onClick={() => setValue("priority", p)}
                     className={`flex-1 py-2 rounded-lg border text-xs font-bold tracking-wide transition cursor-pointer ${
-                      priority === p
+                      values.priority === p
                         ? `${PRIORITY_COLORS[p]} border-current`
                         : "bg-background border-accent/30 text-primary/30 hover:text-primary/60"
                     }`}
@@ -120,12 +121,13 @@ export default function NewRequestPage() {
               </label>
               <input
                 type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
+                value={values.dueDate ?? ""}
+                onChange={(e) => setValue("dueDate", e.target.value || null)}
                 className="w-full border border-accent/40 bg-background rounded-lg px-4 py-2.5 text-sm text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
               />
             </div>
 
+            {/* Tags */}
             <div className="space-y-1">
               <label className="text-xs font-semibold text-primary/50 uppercase tracking-wider">
                 Tags <span className="text-primary/30">(optional)</span>
@@ -133,14 +135,11 @@ export default function NewRequestPage() {
               <TagSelector selectedTags={tags} onChange={setTags} />
             </div>
 
-            {/* Error */}
-            {error && <p className="text-sm text-[#93032E]">{error}</p>}
-
             {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#00272B] text-[#BFCC94] font-semibold py-2.5 rounded-xl hover:opacity-90 transition disabled:opacity-50"
+              className="w-full bg-primary text-accent font-semibold py-2.5 rounded-xl hover:opacity-90 transition disabled:opacity-50"
             >
               {loading ? "Creating..." : "Create Request"}
             </button>

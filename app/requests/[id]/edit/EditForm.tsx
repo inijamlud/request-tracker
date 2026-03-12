@@ -2,6 +2,7 @@
 
 import TagSelector from "@/components/TagSelector";
 import { PRIORITY_COLORS, PRIORITY_ORDER } from "@/constants/priority";
+import { useRequestForm } from "@/hooks/useRequestForm";
 import { Tag } from "@/lib/generated/prisma/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,43 +20,41 @@ type Request = {
 export default function EditForm({ request }: { request: Request }) {
   const router = useRouter();
 
-  const [title, setTitle] = useState(request.title);
-  const [description, setDescription] = useState(request.description);
-  const [priority, setPriority] = useState(request.priority);
-  const [dueDate, setDueDate] = useState(
-    request.dueDate
-      ? new Date(request.dueDate).toISOString().split("T")[0]
-      : "",
-  );
-  const [tags, setTags] = useState<Tag[]>(request.tags.map((t) => t.tag) ?? []);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { values, errors, loading, setLoading, setValue, validate } =
+    useRequestForm({
+      title: request.title,
+      description: request.description,
+      priority: request.priority as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
+      dueDate: request.dueDate
+        ? new Date(request.dueDate).toISOString().split("T")[0]
+        : null,
+    });
+
+  const [tags, setTags] = useState<Tag[]>(request.tags.map((t) => t.tag));
+  const [serverError, setServerError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!title.trim() || !description.trim()) {
-      setError("Title and description are required.");
-      return;
-    }
+    if (!validate()) return;
 
     setLoading(true);
-    setError("");
+    setServerError("");
 
     const res = await fetch(`/api/requests/${request.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        title,
-        description,
-        priority,
-        dueDate: dueDate || null,
+        title: values.title,
+        description: values.description,
+        priority: values.priority,
+        dueDate: values.dueDate || null,
       }),
     });
 
     if (!res.ok) {
       const data = await res.json();
-      setError(data.error ?? "Something went wrong");
+      setServerError(data.error ?? "Something went wrong");
       setLoading(false);
       return;
     }
@@ -91,10 +90,15 @@ export default function EditForm({ request }: { request: Request }) {
                 Title <span className="text-danger">*</span>
               </label>
               <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full border border-accent/40 bg-background rounded-lg px-4 py-2.5 text-sm text-primary placeholder-primary/30 focus:outline-none focus:ring-2 focus:ring-accent/50"
+                value={values.title ?? ""}
+                onChange={(e) => setValue("title", e.target.value)}
+                className={`w-full border bg-background rounded-lg px-4 py-2.5 text-sm text-primary placeholder-primary/30 focus:outline-none focus:ring-2 focus:ring-accent/50 transition ${
+                  errors.title ? "border-danger" : "border-accent/40"
+                }`}
               />
+              {errors.title && (
+                <p className="text-xs text-danger">{errors.title}</p>
+              )}
             </div>
 
             {/* Description */}
@@ -103,11 +107,16 @@ export default function EditForm({ request }: { request: Request }) {
                 Description <span className="text-danger">*</span>
               </label>
               <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={values.description ?? ""}
+                onChange={(e) => setValue("description", e.target.value)}
                 rows={4}
-                className="w-full border border-accent/40 bg-background rounded-lg px-4 py-2.5 text-sm text-primary placeholder-primary/30 focus:outline-none focus:ring-2 focus:ring-accent/50 resize-none"
+                className={`w-full border bg-background rounded-lg px-4 py-2.5 text-sm text-primary placeholder-primary/30 focus:outline-none focus:ring-2 focus:ring-accent/50 resize-none transition ${
+                  errors.description ? "border-danger" : "border-accent/40"
+                }`}
               />
+              {errors.description && (
+                <p className="text-xs text-danger">{errors.description}</p>
+              )}
             </div>
 
             {/* Priority */}
@@ -120,9 +129,9 @@ export default function EditForm({ request }: { request: Request }) {
                   <button
                     key={p}
                     type="button"
-                    onClick={() => setPriority(p)}
+                    onClick={() => setValue("priority", p)}
                     className={`flex-1 py-2 rounded-lg border text-xs font-bold tracking-wide transition cursor-pointer ${
-                      priority === p
+                      values.priority === p
                         ? `${PRIORITY_COLORS[p]} border-current`
                         : "bg-background border-accent/30 text-primary/30 hover:text-primary/60"
                     }`}
@@ -140,8 +149,8 @@ export default function EditForm({ request }: { request: Request }) {
               </label>
               <input
                 type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
+                value={values.dueDate ?? ""}
+                onChange={(e) => setValue("dueDate", e.target.value || null)}
                 className="w-full border border-accent/40 bg-background rounded-lg px-4 py-2.5 text-sm text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
               />
             </div>
@@ -154,8 +163,10 @@ export default function EditForm({ request }: { request: Request }) {
               <TagSelector selectedTags={tags} onChange={setTags} />
             </div>
 
-            {/* Error */}
-            {error && <p className="text-sm text-danger">{error}</p>}
+            {/* Server error */}
+            {serverError && (
+              <p className="text-sm text-danger">{serverError}</p>
+            )}
 
             {/* Actions */}
             <div className="flex gap-3 pt-1">

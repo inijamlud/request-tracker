@@ -1,5 +1,5 @@
-import { Priority } from "@/constants/priority";
 import prisma from "@/lib/prisma";
+import { updateRequestSchema } from "@/lib/schemas";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(
@@ -24,13 +24,21 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const { title, description, priority, dueDate } = await req.json();
+  const body = await req.json();
+
+  const result = updateRequestSchema.safeParse(body);
+
+  if (!result.success) {
+    return NextResponse.json(
+      { error: result.error.flatten().fieldErrors },
+      { status: 400 },
+    );
+  }
 
   const existing = await prisma.request.findUnique({ where: { id } });
   if (!existing) {
     return NextResponse.json({ error: "Request not found" }, { status: 404 });
   }
-
   if (existing.status !== "PENDING") {
     return NextResponse.json(
       { error: "Only PENDING requests can be edited" },
@@ -38,26 +46,14 @@ export async function PUT(
     );
   }
 
-  if (!title?.trim() || !description?.trim()) {
-    return NextResponse.json(
-      { error: "Title and description are required" },
-      { status: 400 },
-    );
-  }
-
-  const validPriorities: Priority[] = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
-
   const updated = await prisma.request.update({
     where: { id },
     data: {
-      title: title.trim(),
-      description: description.trim(),
-      priority: validPriorities.includes(priority)
-        ? priority
-        : existing.priority,
-      dueDate: dueDate ? new Date(dueDate) : null,
+      ...result.data,
+      dueDate: result.data.dueDate ? new Date(result.data.dueDate) : null,
     },
   });
 
+  // broadcast({ type: "REQUEST_UPDATED", request: updated });
   return NextResponse.json(updated);
 }

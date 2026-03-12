@@ -1,46 +1,34 @@
-import { Priority } from "@/constants/priority";
 import prisma from "@/lib/prisma";
+import { createRequestSchema } from "@/lib/schemas";
 import { broadcast } from "@/lib/sse/sse";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
-  const requests = await prisma.request.findMany({
-    orderBy: { createdAt: "desc" },
-  });
-  return NextResponse.json(requests);
-}
+export async function POST(req: NextRequest) {
+  const body = await req.json();
 
-export async function POST(req: Request) {
-  const { title, description, priority, dueDate, tagIds } = await req.json();
+  const result = createRequestSchema.safeParse(body);
 
-  if (!title?.trim() || !description?.trim()) {
+  if (!result.success) {
     return NextResponse.json(
-      { error: "Title and description are required" },
+      { error: result.error.flatten().fieldErrors },
       { status: 400 },
     );
   }
 
-  const validPriorities: Priority[] = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
-  const resolvedPriority: Priority = validPriorities.includes(priority)
-    ? priority
-    : "MEDIUM";
+  const { title, description, priority, dueDate, tagIds } = result.data;
 
   const request = await prisma.request.create({
     data: {
-      title: title.trim(),
-      description: description.trim(),
-      priority: resolvedPriority,
+      title,
+      description,
+      priority,
       dueDate: dueDate ? new Date(dueDate) : null,
       tags: tagIds?.length
-        ? {
-            create: tagIds.map((tagId: string) => ({ tagId })),
-          }
+        ? { create: tagIds.map((tagId) => ({ tagId })) }
         : undefined,
     },
-    include: { tags: { include: { tag: true } } },
   });
 
   broadcast({ type: "REQUEST_CREATED", request });
-
   return NextResponse.json(request, { status: 201 });
 }

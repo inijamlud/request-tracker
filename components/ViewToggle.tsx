@@ -5,9 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 type ViewMode = "compact" | "card" | "table";
 
 const MODES: { mode: ViewMode; icon: string; label: string }[] = [
-  { mode: "compact", icon: "☰", label: "Compact" },
   { mode: "card", icon: "⊞", label: "Card" },
   { mode: "table", icon: "▦", label: "Table" },
+  { mode: "compact", icon: "☰", label: "Compact" },
 ];
 
 export default function ViewToggle({ current }: { current: ViewMode }) {

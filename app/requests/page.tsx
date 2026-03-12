@@ -1,5 +1,6 @@
 import StatusBadge from "@/components/BadgeStatus";
 import DueDateBadge from "@/components/DueDateBadge";
+import Pagination from "@/components/Pagination";
 import PriorityBadge from "@/components/PriorityBadge";
 import RealtimeRequests from "@/components/RealtimeRequests";
 import ViewToggle from "@/components/ViewToggle";
@@ -10,45 +11,56 @@ import SearchInput from "./SearchInput";
 
 type ViewMode = "compact" | "card" | "table";
 
+const PER_PAGE = 10;
+
 type Props = {
   searchParams: Promise<{
     status?: string;
     search?: string;
     tag?: string | string[];
     view?: string;
+    page?: string;
   }>;
 };
 
 export default async function RequestPage({ searchParams }: Props) {
-  const { status, search, tag, view } = await searchParams;
+  const { status, search, tag, view, page } = await searchParams;
 
+  const currentPage = Math.max(1, parseInt(page ?? "1"));
   const viewMode: ViewMode =
     view === "card" || view === "table" ? view : "compact";
-
   const activeTags: string[] = tag ? (Array.isArray(tag) ? tag : [tag]) : [];
-
   const validStatuses = ["PENDING", "SUBMITTED", "DONE"];
 
-  const [requests, allTags] = await Promise.all([
+  const where = {
+    ...(status && validStatuses.includes(status)
+      ? { status: status as Status }
+      : {}),
+    ...(search
+      ? { title: { contains: search, mode: "insensitive" as const } }
+      : {}),
+    ...(activeTags.length > 0
+      ? {
+          AND: activeTags.map((t) => ({
+            tags: { some: { tag: { name: t } } },
+          })),
+        }
+      : {}),
+  };
+
+  const [requests, total, allTags] = await Promise.all([
     prisma.request.findMany({
-      where: {
-        ...(status && validStatuses.includes(status)
-          ? { status: status as Status }
-          : {}),
-        ...(search ? { title: { contains: search, mode: "insensitive" } } : {}),
-        ...(activeTags.length > 0
-          ? {
-              AND: activeTags.map((t) => ({
-                tags: { some: { tag: { name: t } } },
-              })),
-            }
-          : {}),
-      },
+      where,
       orderBy: { createdAt: "desc" },
       include: { tags: { include: { tag: true } } },
+      skip: (currentPage - 1) * PER_PAGE,
+      take: PER_PAGE,
     }),
+    prisma.request.count({ where }),
     prisma.tag.findMany({ orderBy: { name: "asc" } }),
   ]);
+
+  const totalPages = Math.ceil(total / PER_PAGE);
 
   return (
     <div className="min-h-screen bg-background p-10">
@@ -57,8 +69,9 @@ export default async function RequestPage({ searchParams }: Props) {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-primary">Requests</h1>
+
             <p className="text-primary/50 mt-1">
-              {requests.length} requests found
+              {total} requests · page {currentPage} of {totalPages || 1}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -390,6 +403,12 @@ export default async function RequestPage({ searchParams }: Props) {
             </table>
           </div>
         )}
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          searchParams={{ status, search, tag, view }}
+        />
       </div>
 
       <RealtimeRequests />
