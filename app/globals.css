@@ -5,6 +5,21 @@
   --foreground: #171717;
 }
 
+@layer base {
+  :root {
+    --color-primary: #00272b;
+    --color-background: #f0f4ef;
+    --color-accent: #bfcc94;
+    --color-warning: #ed7d3a;
+    --color-danger: #93032e;
+
+    /* Status colors */
+    --color-status-pending: #bfcc94;
+    --color-status-submitted: #ed7d3a;
+    --color-status-done: #93032e;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
