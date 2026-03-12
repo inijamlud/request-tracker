@@ -31,7 +31,6 @@ export async function PUT(
     return NextResponse.json({ error: "Request not found" }, { status: 404 });
   }
 
-  // Hanya boleh edit kalau masih PENDING
   if (existing.status !== "PENDING") {
     return NextResponse.json(
       { error: "Only PENDING requests can be edited" },

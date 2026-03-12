@@ -7,11 +7,18 @@ type Props = { params: Promise<{ id: string }> };
 export default async function EditRequestPage({ params }: Props) {
   const { id } = await params;
 
-  const request = await prisma.request.findUnique({ where: { id } });
+  const request = await prisma.request.findUnique({
+    where: { id },
+    include: { tags: { include: { tag: true } } },
+  });
 
   if (!request) notFound();
 
   if (request.status !== "PENDING") redirect(`/requests/${id}`);
 
-  return <EditForm request={request} />;
+  return (
+    <div className="mb-4">
+      <EditForm request={request} />;
+    </div>
+  );
 }

@@ -1,6 +1,8 @@
 "use client";
 
+import TagSelector from "@/components/TagSelector";
 import { PRIORITY_COLORS, PRIORITY_ORDER } from "@/constants/priority";
+import { Tag } from "@/lib/generated/prisma/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -11,6 +13,7 @@ type Request = {
   description: string;
   priority: string;
   dueDate: Date | null;
+  tags: { tag: Tag }[];
 };
 
 export default function EditForm({ request }: { request: Request }) {
@@ -24,6 +27,7 @@ export default function EditForm({ request }: { request: Request }) {
       ? new Date(request.dueDate).toISOString().split("T")[0]
       : "",
   );
+  const [tags, setTags] = useState<Tag[]>(request.tags.map((t) => t.tag) ?? []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -56,6 +60,12 @@ export default function EditForm({ request }: { request: Request }) {
       return;
     }
 
+    await fetch(`/api/requests/${request.id}/tags`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tagIds: tags.map((t) => t.id) }),
+    });
+
     router.push(`/requests/${request.id}`);
     router.refresh();
   }
@@ -70,7 +80,7 @@ export default function EditForm({ request }: { request: Request }) {
           ← Back to Request
         </Link>
 
-        <div className="bg-surface border border-accent/40 rounded-2xl p-6 space-y-5">
+        <div className="bg-surface border border-accent/40 rounded-2xl p-6 space-y-5 mt-5">
           <h1 className="text-2xl font-bold text-primary">Edit Request</h1>
           <hr className="border-accent/20" />
 
@@ -134,6 +144,14 @@ export default function EditForm({ request }: { request: Request }) {
                 onChange={(e) => setDueDate(e.target.value)}
                 className="w-full border border-accent/40 bg-background rounded-lg px-4 py-2.5 text-sm text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
               />
+            </div>
+
+            {/* Tags */}
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-primary/50 uppercase tracking-wider">
+                Tags <span className="text-primary/30">(optional)</span>
+              </label>
+              <TagSelector selectedTags={tags} onChange={setTags} />
             </div>
 
             {/* Error */}

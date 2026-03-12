@@ -1,9 +1,12 @@
 "use client";
 
+import TagSelector from "@/components/TagSelector";
 import { PRIORITY_COLORS, PRIORITY_ORDER } from "@/constants/priority";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+
+type Tag = { id: string; name: string; color: string };
 
 export default function NewRequestPage() {
   const router = useRouter();
@@ -14,6 +17,7 @@ export default function NewRequestPage() {
   const [dueDate, setDueDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [tags, setTags] = useState<Tag[]>([]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,6 +38,7 @@ export default function NewRequestPage() {
         description,
         priority,
         dueDate: dueDate || null,
+        tags: tags.map((t) => t.id),
       }),
     });
 
@@ -52,7 +57,7 @@ export default function NewRequestPage() {
         </Link>
 
         {/* Card */}
-        <div className="bg-white border border-[#BFCC94]/40 rounded-2xl p-6 space-y-5">
+        <div className="bg-white border border-[#BFCC94]/40 rounded-2xl p-6 space-y-5 mt-5">
           <h1 className="text-2xl font-bold text-[#00272B]">New Request</h1>
 
           <hr className="border-[#BFCC94]/30" />
@@ -119,6 +124,13 @@ export default function NewRequestPage() {
                 onChange={(e) => setDueDate(e.target.value)}
                 className="w-full border border-accent/40 bg-background rounded-lg px-4 py-2.5 text-sm text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
               />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-primary/50 uppercase tracking-wider">
+                Tags <span className="text-primary/30">(optional)</span>
+              </label>
+              <TagSelector selectedTags={tags} onChange={setTags} />
             </div>
 
             {/* Error */}

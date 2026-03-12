@@ -1,4 +1,5 @@
 import StatusBadge from "@/components/BadgeStatus";
+import DueDateBadge from "@/components/DueDateBadge";
 import PriorityBadge from "@/components/PriorityBadge";
 import Timeline from "@/components/Timeline";
 import prisma from "@/lib/prisma";
@@ -20,6 +21,7 @@ export default async function RequestDetailPage({ params }: Props) {
       history: {
         orderBy: { createdAt: "asc" },
       },
+      tags: { include: { tag: true } },
     },
   });
 
@@ -37,7 +39,7 @@ export default async function RequestDetailPage({ params }: Props) {
         </Link>
 
         {/* Card */}
-        <div className="bg-white border border-[#BFCC94]/40 rounded-2xl p-6 space-y-4 mt-6">
+        <div className="bg-white border border-[#BFCC94]/40 rounded-2xl p-6 space-y-4 mt-5">
           {/* Title + Badge */}
           <div className="flex items-start justify-between gap-4">
             <h1 className="text-2xl font-bold text-[#00272B]">
@@ -54,25 +56,27 @@ export default async function RequestDetailPage({ params }: Props) {
             {request.description}
           </p>
 
-          <div className="flex items-center gap-3 flex-wrap">
+          {request.tags.length > 0 && (
+            <div className="flex gap-1.5 flex-wrap">
+              {request.tags.map(({ tag }) => (
+                <span
+                  key={tag.id}
+                  style={{
+                    background: tag.color + "22",
+                    borderColor: tag.color + "44",
+                    color: tag.color,
+                  }}
+                  className="text-xs font-semibold px-2.5 py-1 rounded-full border"
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 flex-wrap">
             <PriorityBadge priority={request.priority} />
-            {request.dueDate && (
-              <span
-                className={`text-xs font-medium ${
-                  new Date(request.dueDate) < new Date() &&
-                  request.status !== "DONE"
-                    ? "text-danger font-bold"
-                    : "text-primary/40"
-                }`}
-              >
-                Due{" "}
-                {new Date(request.dueDate).toLocaleDateString("id-ID", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
-              </span>
-            )}
+            <DueDateBadge dueDate={request.dueDate} status={request.status} />
           </div>
 
           {/* Meta */}
@@ -94,7 +98,6 @@ export default async function RequestDetailPage({ params }: Props) {
 
         {/* Action */}
 
-        {/* Tampilkan tombol Edit hanya kalau PENDING */}
         {request.status === "PENDING" && (
           <Link
             href={`/requests/${request.id}/edit`}

@@ -1,4 +1,5 @@
 import StatusBadge from "@/components/BadgeStatus";
+import DueDateBadge from "@/components/DueDateBadge";
 import { VALID_STATUSES } from "@/constants/status";
 import prisma from "@/lib/prisma";
 import Link from "next/link";
@@ -108,7 +109,11 @@ export default async function DashboardPage() {
                       })}
                     </p>
                   </div>
-                  <StatusBadge status={req.status} />
+
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status={req.status} />
+                    <DueDateBadge dueDate={req.dueDate} status={req.status} />
+                  </div>
                 </Link>
               </li>
             ))}

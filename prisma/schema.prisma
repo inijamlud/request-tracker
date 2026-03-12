@@ -22,6 +22,23 @@ model Request {
   createdAt   DateTime @default(now())
   updatedAt   DateTime        @updatedAt
   history     StatusHistory[] 
+  tags        RequestTag[]  
+}
+
+model Tag {
+  id       String       @id @default(uuid())
+  name     String       @unique
+  color    String       @default("#BFCC94")
+  requests RequestTag[]
+}
+
+model RequestTag {
+  requestId String
+  tagId     String
+  request   Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([requestId, tagId])
 }
 
 model StatusHistory {
