@@ -5,6 +5,7 @@ import PriorityBadge from "@/components/PriorityBadge";
 import RealtimeRequests from "@/components/RealtimeRequests";
 import ViewToggle from "@/components/ViewToggle";
 import { Status } from "@/constants/status";
+import { Request, Tag } from "@/lib/generated/prisma/browser";
 import prisma from "@/lib/prisma";
 import Link from "next/link";
 import SearchInput from "./SearchInput";
@@ -128,7 +129,7 @@ export default async function RequestPage({ searchParams }: Props) {
             <span className="text-xs text-primary/30 font-semibold uppercase tracking-wider">
               Tags:
             </span>
-            {allTags.map((t) => {
+            {allTags.map((t: Tag) => {
               const isActive = activeTags.includes(t.name);
               const nextTags = isActive
                 ? activeTags.filter((a) => a !== t.name)
@@ -176,68 +177,75 @@ export default async function RequestPage({ searchParams }: Props) {
                 No requests found.
               </p>
             )}
-            {requests.map((req, i) => (
-              <Link
-                key={req.id}
-                href={`/requests/${req.id}`}
-                className={`flex items-center gap-3 px-5 py-3 hover:bg-primary/5 transition group ${
-                  i < requests.length - 1 ? "border-b border-accent/10" : ""
-                }`}
-              >
-                <span
-                  className={`w-2 h-2 rounded-full shrink-0 ${
-                    req.status === "DONE"
-                      ? "bg-status-done"
-                      : req.status === "SUBMITTED"
-                        ? "bg-status-submitted"
-                        : "bg-status-pending"
+            {requests.map(
+              (
+                req: Request & {
+                  tags: { tag: Tag }[];
+                },
+                i: number,
+              ) => (
+                <Link
+                  key={req.id}
+                  href={`/requests/${req.id}`}
+                  className={`flex items-center gap-3 px-5 py-3 hover:bg-primary/5 transition group ${
+                    i < requests.length - 1 ? "border-b border-accent/10" : ""
                   }`}
-                />
-                <span className="flex-1 text-sm font-medium text-primary group-hover:text-warning transition truncate">
-                  {req.title}
-                </span>
-                <div className="flex items-center gap-3 shrink-0">
-                  {req.tags.slice(0, 2).map(({ tag: t }) => (
-                    <span
-                      key={t.id}
-                      style={{
-                        background: t.color + "22",
-                        borderColor: t.color + "33",
-                        color: t.color,
-                      }}
-                      className="hidden sm:inline text-xs font-semibold px-2 py-0.5 rounded-full border"
-                    >
-                      {t.name}
-                    </span>
-                  ))}
-                  {req.tags.length > 2 && (
-                    <span className="text-xs text-primary/25">
-                      +{req.tags.length - 2}
-                    </span>
-                  )}
-                  <DueDateBadge dueDate={req.dueDate} status={req.status} />
+                >
                   <span
-                    className={`text-xs font-bold w-16 text-right ${
-                      req.priority === "CRITICAL"
-                        ? "text-danger"
-                        : req.priority === "HIGH"
-                          ? "text-warning"
-                          : req.priority === "MEDIUM"
-                            ? "text-accent"
-                            : "text-primary/25"
+                    className={`w-2 h-2 rounded-full shrink-0 ${
+                      req.status === "DONE"
+                        ? "bg-status-done"
+                        : req.status === "SUBMITTED"
+                          ? "bg-status-submitted"
+                          : "bg-status-pending"
                     }`}
-                  >
-                    {req.priority}
+                  />
+                  <span className="flex-1 text-sm font-medium text-primary group-hover:text-warning transition truncate">
+                    {req.title}
                   </span>
-                  <span className="text-xs text-primary/25 w-16 text-right hidden md:block">
-                    {new Date(req.createdAt).toLocaleDateString("id-ID", {
-                      day: "numeric",
-                      month: "short",
-                    })}
-                  </span>
-                </div>
-              </Link>
-            ))}
+                  <div className="flex items-center gap-3 shrink-0">
+                    {req.tags.slice(0, 2).map(({ tag: t }: { tag: Tag }) => (
+                      <span
+                        key={t.id}
+                        style={{
+                          background: t.color + "22",
+                          borderColor: t.color + "33",
+                          color: t.color,
+                        }}
+                        className="hidden sm:inline text-xs font-semibold px-2 py-0.5 rounded-full border"
+                      >
+                        {t.name}
+                      </span>
+                    ))}
+                    {req.tags.length > 2 && (
+                      <span className="text-xs text-primary/25">
+                        +{req.tags.length - 2}
+                      </span>
+                    )}
+                    <DueDateBadge dueDate={req.dueDate} status={req.status} />
+                    <span
+                      className={`text-xs font-bold w-16 text-right ${
+                        req.priority === "CRITICAL"
+                          ? "text-danger"
+                          : req.priority === "HIGH"
+                            ? "text-warning"
+                            : req.priority === "MEDIUM"
+                              ? "text-accent"
+                              : "text-primary/25"
+                      }`}
+                    >
+                      {req.priority}
+                    </span>
+                    <span className="text-xs text-primary/25 w-16 text-right hidden md:block">
+                      {new Date(req.createdAt).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </span>
+                  </div>
+                </Link>
+              ),
+            )}
           </div>
         )}
 
@@ -249,64 +257,70 @@ export default async function RequestPage({ searchParams }: Props) {
                 No requests found.
               </p>
             )}
-            {requests.map((req) => (
-              <Link
-                key={req.id}
-                href={`/requests/${req.id}`}
-                className="bg-surface border border-accent/20 rounded-2xl p-5 flex flex-col gap-3 hover:shadow-md hover:border-accent/40 transition group"
-              >
-                {/* Top row */}
-                <div className="flex items-start justify-between gap-2">
-                  <StatusBadge status={req.status} />
-                  <PriorityBadge priority={req.priority} />
-                </div>
-
-                {/* Title */}
-                <h2 className="font-semibold text-primary group-hover:text-warning transition line-clamp-2 text-sm leading-snug">
-                  {req.title}
-                </h2>
-
-                {/* Description */}
-                <p className="text-xs text-primary/40 line-clamp-2 flex-1">
-                  {req.description}
-                </p>
-
-                {/* Tags */}
-                {req.tags.length > 0 && (
-                  <div className="flex gap-1 flex-wrap">
-                    {req.tags.slice(0, 3).map(({ tag: t }) => (
-                      <span
-                        key={t.id}
-                        style={{
-                          background: t.color + "22",
-                          borderColor: t.color + "33",
-                          color: t.color,
-                        }}
-                        className="text-xs font-semibold px-2 py-0.5 rounded-full border"
-                      >
-                        {t.name}
-                      </span>
-                    ))}
-                    {req.tags.length > 3 && (
-                      <span className="text-xs text-primary/25 px-2 py-0.5 rounded-full border border-primary/10">
-                        +{req.tags.length - 3}
-                      </span>
-                    )}
+            {requests.map(
+              (
+                req: Request & {
+                  tags: { tag: Tag }[];
+                },
+              ) => (
+                <Link
+                  key={req.id}
+                  href={`/requests/${req.id}`}
+                  className="bg-surface border border-accent/20 rounded-2xl p-5 flex flex-col gap-3 hover:shadow-md hover:border-accent/40 transition group"
+                >
+                  {/* Top row */}
+                  <div className="flex items-start justify-between gap-2">
+                    <StatusBadge status={req.status} />
+                    <PriorityBadge priority={req.priority} />
                   </div>
-                )}
 
-                {/* Footer */}
-                <div className="flex items-center justify-between pt-1 border-t border-accent/10">
-                  <DueDateBadge dueDate={req.dueDate} status={req.status} />
-                  <span className="text-xs text-primary/25">
-                    {new Date(req.createdAt).toLocaleDateString("id-ID", {
-                      day: "numeric",
-                      month: "short",
-                    })}
-                  </span>
-                </div>
-              </Link>
-            ))}
+                  {/* Title */}
+                  <h2 className="font-semibold text-primary group-hover:text-warning transition line-clamp-2 text-sm leading-snug">
+                    {req.title}
+                  </h2>
+
+                  {/* Description */}
+                  <p className="text-xs text-primary/40 line-clamp-2 flex-1">
+                    {req.description}
+                  </p>
+
+                  {/* Tags */}
+                  {req.tags.length > 0 && (
+                    <div className="flex gap-1 flex-wrap">
+                      {req.tags.slice(0, 3).map(({ tag: t }) => (
+                        <span
+                          key={t.id}
+                          style={{
+                            background: t.color + "22",
+                            borderColor: t.color + "33",
+                            color: t.color,
+                          }}
+                          className="text-xs font-semibold px-2 py-0.5 rounded-full border"
+                        >
+                          {t.name}
+                        </span>
+                      ))}
+                      {req.tags.length > 3 && (
+                        <span className="text-xs text-primary/25 px-2 py-0.5 rounded-full border border-primary/10">
+                          +{req.tags.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-1 border-t border-accent/10">
+                    <DueDateBadge dueDate={req.dueDate} status={req.status} />
+                    <span className="text-xs text-primary/25">
+                      {new Date(req.createdAt).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </span>
+                  </div>
+                </Link>
+              ),
+            )}
           </div>
         )}
 
@@ -344,61 +358,73 @@ export default async function RequestPage({ searchParams }: Props) {
                     </td>
                   </tr>
                 )}
-                {requests.map((req, i) => (
-                  <tr
-                    key={req.id}
-                    className={`group hover:bg-primary/5 transition ${
-                      i < requests.length - 1 ? "border-b border-accent/10" : ""
-                    }`}
-                  >
-                    <td className="px-5 py-3">
-                      <Link
-                        href={`/requests/${req.id}`}
-                        className="font-medium text-primary group-hover:text-warning transition truncate block max-w-xs"
-                      >
-                        {req.title}
-                      </Link>
-                    </td>
-                    <td className="px-5 py-3">
-                      <StatusBadge status={req.status} />
-                    </td>
-                    <td className="px-5 py-3">
-                      <PriorityBadge priority={req.priority} />
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex gap-1 flex-wrap">
-                        {req.tags.slice(0, 2).map(({ tag: t }) => (
-                          <span
-                            key={t.id}
-                            style={{
-                              background: t.color + "22",
-                              borderColor: t.color + "33",
-                              color: t.color,
-                            }}
-                            className="text-xs font-semibold px-2 py-0.5 rounded-full border"
-                          >
-                            {t.name}
-                          </span>
-                        ))}
-                        {req.tags.length > 2 && (
-                          <span className="text-xs text-primary/25">
-                            +{req.tags.length - 2}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <DueDateBadge dueDate={req.dueDate} status={req.status} />
-                    </td>
-                    <td className="px-5 py-3 text-xs text-primary/30 whitespace-nowrap">
-                      {new Date(req.createdAt).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </td>
-                  </tr>
-                ))}
+                {requests.map(
+                  (
+                    req: Request & {
+                      tags: { tag: Tag }[];
+                    },
+                    i: number,
+                  ) => (
+                    <tr
+                      key={req.id}
+                      className={`group hover:bg-primary/5 transition ${
+                        i < requests.length - 1
+                          ? "border-b border-accent/10"
+                          : ""
+                      }`}
+                    >
+                      <td className="px-5 py-3">
+                        <Link
+                          href={`/requests/${req.id}`}
+                          className="font-medium text-primary group-hover:text-warning transition truncate block max-w-xs"
+                        >
+                          {req.title}
+                        </Link>
+                      </td>
+                      <td className="px-5 py-3">
+                        <StatusBadge status={req.status} />
+                      </td>
+                      <td className="px-5 py-3">
+                        <PriorityBadge priority={req.priority} />
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex gap-1 flex-wrap">
+                          {req.tags.slice(0, 2).map(({ tag: t }) => (
+                            <span
+                              key={t.id}
+                              style={{
+                                background: t.color + "22",
+                                borderColor: t.color + "33",
+                                color: t.color,
+                              }}
+                              className="text-xs font-semibold px-2 py-0.5 rounded-full border"
+                            >
+                              {t.name}
+                            </span>
+                          ))}
+                          {req.tags.length > 2 && (
+                            <span className="text-xs text-primary/25">
+                              +{req.tags.length - 2}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-5 py-3">
+                        <DueDateBadge
+                          dueDate={req.dueDate}
+                          status={req.status}
+                        />
+                      </td>
+                      <td className="px-5 py-3 text-xs text-primary/30 whitespace-nowrap">
+                        {new Date(req.createdAt).toLocaleDateString("id-ID", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </td>
+                    </tr>
+                  ),
+                )}
               </tbody>
             </table>
           </div>

@@ -14,7 +14,9 @@ export default async function Home() {
 
   const statCards = VALID_STATUSES.map((s) => ({
     status: s,
-    count: counts.find((c) => c.status === s)?._count.status ?? 0,
+    count:
+      counts.find((c: { status: string }) => c.status === s)?._count.status ??
+      0,
   }));
 
   return (

@@ -1,6 +1,7 @@
 import StatusBadge from "@/components/BadgeStatus";
 import DueDateBadge from "@/components/DueDateBadge";
 import { VALID_STATUSES } from "@/constants/status";
+import { Request } from "@/lib/generated/prisma/client";
 import prisma from "@/lib/prisma";
 import Link from "next/link";
 import StatusChart from "./StatusChart";
@@ -20,12 +21,16 @@ export default async function DashboardPage() {
 
   const chartData = VALID_STATUSES.map((s) => ({
     status: s,
-    count: counts.find((c) => c.status === s)?._count.status ?? 0,
+    count:
+      counts.find((c: { status: string }) => c.status === s)?._count.status ??
+      0,
   }));
 
   const statCards = VALID_STATUSES.map((s) => ({
     status: s,
-    count: counts.find((c) => c.status === s)?._count.status ?? 0,
+    count:
+      counts.find((c: { status: string }) => c.status === s)?._count.status ??
+      0,
   }));
 
   return (
@@ -91,7 +96,7 @@ export default async function DashboardPage() {
                 No requests yet.
               </p>
             )}
-            {recentRequests.map((req) => (
+            {recentRequests.map((req: Request) => (
               <li key={req.id}>
                 <Link
                   href={`/requests/${req.id}`}

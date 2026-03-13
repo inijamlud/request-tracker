@@ -2,6 +2,7 @@ import StatusBadge from "@/components/BadgeStatus";
 import DueDateBadge from "@/components/DueDateBadge";
 import PriorityBadge from "@/components/PriorityBadge";
 import Timeline from "@/components/Timeline";
+import { Tag } from "@/lib/generated/prisma/browser";
 import prisma from "@/lib/prisma";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -58,7 +59,7 @@ export default async function RequestDetailPage({ params }: Props) {
 
           {request.tags.length > 0 && (
             <div className="flex gap-1.5 flex-wrap">
-              {request.tags.map(({ tag }) => (
+              {request.tags.map(({ tag }: { tag: Tag }) => (
                 <span
                   key={tag.id}
                   style={{
