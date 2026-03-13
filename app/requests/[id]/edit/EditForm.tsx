@@ -11,7 +11,7 @@ import { useState } from "react";
 type Request = {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   priority: string;
   dueDate: Date | null;
   tags: { tag: Tag }[];
@@ -23,7 +23,7 @@ export default function EditForm({ request }: { request: Request }) {
   const { values, errors, loading, setLoading, setValue, validate } =
     useRequestForm({
       title: request.title,
-      description: request.description,
+      description: request.description ?? "",
       priority: request.priority as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
       dueDate: request.dueDate
         ? new Date(request.dueDate).toISOString().split("T")[0]
