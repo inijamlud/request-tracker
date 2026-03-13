@@ -80,22 +80,31 @@ export default async function ActivityPage() {
 
   // Gabung semua events: created + status changes
   const events: Event[] = [
-    ...requests.map((r) => ({
-      id: `created-${r.id}`,
-      date: r.createdAt,
-      type: "created" as const,
-      status: "PENDING",
-      requestId: r.id,
-      requestTitle: r.title,
-    })),
-    ...history.map((h) => ({
-      id: h.id,
-      date: h.createdAt,
-      type: "status_change" as const,
-      status: h.status,
-      requestId: h.request.id,
-      requestTitle: h.request.title,
-    })),
+    ...requests.map(
+      (r: { id: string; title: string; createdAt: Date; status: string }) => ({
+        id: `created-${r.id}`,
+        date: r.createdAt,
+        type: "created" as const,
+        status: "PENDING",
+        requestId: r.id,
+        requestTitle: r.title,
+      }),
+    ),
+    ...history.map(
+      (h: {
+        id: string;
+        createdAt: Date;
+        status: string;
+        request: { id: string; title: string };
+      }) => ({
+        id: h.id,
+        date: h.createdAt,
+        type: "status_change" as const,
+        status: h.status,
+        requestId: h.request.id,
+        requestTitle: h.request.title,
+      }),
+    ),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const grouped = groupByDay(events);
